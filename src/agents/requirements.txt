@@ -1,0 +1,4 @@
+python-dotenv>=1.0.1
+azure-identity>=1.19.0
+colorlog>=6.8.2
+./libs/vanilla_aiagents-3.0.0-py3-none-any.whl[remote]

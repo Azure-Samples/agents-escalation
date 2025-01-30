@@ -1,0 +1,25 @@
+{
+  "When_a_message_is_received_in_a_topic_subscription_(auto-complete)": {
+    "recurrence": {
+      "interval": 3,
+      "frequency": "Minute"
+    },
+    "evaluatedRecurrence": {
+      "interval": 3,
+      "frequency": "Minute"
+    },
+    "type": "ApiConnection",
+    "inputs": {
+      "host": {
+        "connection": {
+          "name": "@parameters('$connections')['servicebus']['connectionId']"
+        }
+      },
+      "method": "get",
+      "path": "/@{encodeURIComponent(encodeURIComponent('events'))}/subscriptions/@{encodeURIComponent('approvals')}/messages/head",
+      "queries": {
+        "subscriptionType": "Main"
+      }
+    }
+  }
+}

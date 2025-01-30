@@ -1,0 +1,213 @@
+{
+  "Parse_JSON": {
+    "runAfter": {},
+    "type": "ParseJson",
+    "inputs": {
+      "content": "@decodeBase64(triggerBody()?['ContentData'])",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "conversation": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "audio": {},
+                        "function_call": {},
+                        "refusal": {},
+                        "tool_calls": {}
+                      },
+                      "required": ["content", "role"]
+                    }
+                  },
+                  "metrics": {
+                    "type": "object",
+                    "properties": {
+                      "completion_tokens": {
+                        "type": "integer"
+                      },
+                      "prompt_tokens": {
+                        "type": "integer"
+                      },
+                      "total_tokens": {
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  "variables": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                }
+              },
+              "id": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            }
+          },
+          "datacontenttype": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "pubsubname": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "specversion": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          },
+          "traceid": {
+            "type": "string"
+          },
+          "traceparent": {
+            "type": "string"
+          },
+          "tracestate": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "Send_approval_email": {
+    "runAfter": {
+      "Execute_JavaScript_Code": ["Succeeded"]
+    },
+    "type": "ApiConnectionWebhook",
+    "inputs": {
+      "host": {
+        "connection": {
+          "name": "@parameters('$connections')['office365']['connectionId']"
+        }
+      },
+      "body": {
+        "NotificationUrl": "@listCallbackUrl()",
+        "Message": {
+          "To": "ricchi@microsoft.com",
+          "Body": "@body('Execute_JavaScript_Code')",
+          "Importance": "Normal",
+          "HideHTMLMessage": false,
+          "ShowHTMLConfirmationDialog": false,
+          "Subject": "Richiesta di approvazione",
+          "Options": "Approve, Decline"
+        }
+      },
+      "path": "/approvalmail/$subscriptions"
+    }
+  },
+  "Execute_JavaScript_Code": {
+    "runAfter": {
+      "Parse_JSON": ["Succeeded"]
+    },
+    "type": "JavaScriptCode",
+    "inputs": {
+      "code": "const messages = workflowContext.actions.Parse_JSON.outputs.body.data.conversation.messages\r\n\r\nlet startIndex = messages.length - 3\r\nif (startIndex < 0 ) startIndex = 0\r\n\r\nreturn messages.slice(startIndex).map(x => `${x[\"name\"]}: ${x[\"content\"]}`).join(\"\\r\\n\");"
+    }
+  },
+  "Send_message": {
+    "runAfter": {
+      "Switch": ["Succeeded"]
+    },
+    "type": "ApiConnection",
+    "inputs": {
+      "host": {
+        "connection": {
+          "name": "@parameters('$connections')['servicebus']['connectionId']"
+        }
+      },
+      "method": "post",
+      "body": {
+        "ContentData": "@base64(concat('{','\n','  \"specversion\": \"1.0\",','\n','  \"type\": \"com.dapr.event.sent\",','\n','  \"source\": \"approval-logic-app\",','\n','  \"id\": \"',guid(),'\",','\n','  \"time\": \"',utcNow(),'\",','\n','  \"datacontenttype\": \"application/json\",','\n','  \"data\": {','\n','    \"id\": \"',body('Parse_JSON')?['data']?['id'],'\",','\n','    \"input\": \"',variables('response'),'\"','\n','  }','\n','}','\n'))",
+        "ContentType": "application/json",
+        "Properties": {
+          "type": "input",
+          "id": "@{body('Parse_JSON')?['data']?['id']}"
+        }
+      },
+      "path": "/@{encodeURIComponent(encodeURIComponent('events'))}/messages",
+      "queries": {
+        "systemProperties": "None"
+      }
+    }
+  },
+  "Switch": {
+    "runAfter": {
+      "Initialize_variable": ["Succeeded"]
+    },
+    "cases": {
+      "Case": {
+        "case": "Approve",
+        "actions": {
+          "Set_variable": {
+            "type": "SetVariable",
+            "inputs": {
+              "name": "response",
+              "value": "I approve the escalation. Please proceed with the necessary steps."
+            }
+          }
+        }
+      }
+    },
+    "default": {
+      "actions": {
+        "Set_variable_1": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "response",
+            "value": "I decline the escalation."
+          }
+        }
+      }
+    },
+    "expression": "@body('Send_approval_email')?['SelectedOption']",
+    "type": "Switch"
+  },
+  "Initialize_variable": {
+    "runAfter": {
+      "Send_approval_email": ["Succeeded"]
+    },
+    "type": "InitializeVariable",
+    "inputs": {
+      "variables": [
+        {
+          "name": "response",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}
