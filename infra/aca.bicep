@@ -205,7 +205,7 @@ resource agentsContainerApp 'Microsoft.App/containerApps@2022-03-01' = {
       containers: [
         {
           name: 'agents'
-          image: fetchLatestImageAgents.outputs.containers[0].image ?? emptyContainerImage
+          image: agentAppExists ? fetchLatestImageAgents.outputs.containers[0].image ?? emptyContainerImage
           resources: {
             cpu: 2
             memory: '4Gi'
@@ -266,7 +266,7 @@ resource uiContainerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
       containers: [
         {
           name: 'ui'
-          image: fetchLatestImageUI.outputs.containers[0].image ?? emptyContainerImage
+          image: uiAppExists ? fetchLatestImageUI.outputs.containers[0].image ?? emptyContainerImage
           resources: {
             cpu: 1
             memory: '2Gi'
