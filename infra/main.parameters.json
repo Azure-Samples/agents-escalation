@@ -8,6 +8,9 @@
     "currentUserId": {
       "value": "${AZURE_PRINCIPAL_ID}"
     },
+    "runningOnGh": {
+      "value": "${GITHUB_ACTIONS}"
+    },
     "location": {
       "value": "${AZURE_LOCATION}"
     },

@@ -86,7 +86,7 @@ resource sqlRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignm
   }
 }
 // Assign the User Assigned Identity Contributor role to the Cosmos DB account for the current user
-resource sqlRoleAssignmentUser 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2021-04-15' = {
+resource sqlRoleAssignmentUser 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2021-04-15' = if(currentUserId != null) {
   name: guid(cosmosDataContributor, currentUserId, cosmosDbAccount.id)
   parent: cosmosDbAccount
   properties: {

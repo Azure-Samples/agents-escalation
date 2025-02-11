@@ -26,6 +26,7 @@ param openAIModel string
 param openAIApiVersion string
 param agentAppExists bool = false
 param uiAppExists bool = false
+param runningOnGh string = ''
 
 var tags = {
   'azd-env-name': environmentName
@@ -38,6 +39,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 var uniqueId = uniqueString(rg.id)
+var principalType = empty(runningOnGh) ? 'User' : 'ServicePrincipal'
 
 module uami './uami.bicep' = {
   name: 'uami'
@@ -87,7 +89,7 @@ module cosmos 'cosmos.bicep' = {
     uniqueId: uniqueId
     prefix: prefix
     userAssignedIdentityPrincipalId: uami.outputs.principalId
-    currentUserId: currentUserId
+    currentUserId: principalType == 'User' ? currentUserId : null
   }
 }
 
@@ -140,18 +142,22 @@ module sb 'br/public:avm/res/service-bus/namespace:0.11.2' = {
         ]
       }
     ]
-    roleAssignments: [
-      {
-        principalId: currentUserId
-        principalType: 'User'
-        roleDefinitionIdOrName: 'Azure Service Bus Data Owner'
-      }
-      {
-        principalId: uami.outputs.principalId
-        principalType: 'ServicePrincipal'
-        roleDefinitionIdOrName: 'Azure Service Bus Data Owner'
-      }
-    ]
+    roleAssignments: concat(
+      [
+        {
+          principalId: uami.outputs.principalId
+          principalType: 'ServicePrincipal'
+          roleDefinitionIdOrName: 'Azure Service Bus Data Owner'
+        }
+      ],
+      principalType == 'User' ? [
+        {
+          principalId: currentUserId
+          principalType: 'User'
+          roleDefinitionIdOrName: 'Azure Service Bus Data Owner'
+        }
+      ] : []
+    )
   }
 }
 
