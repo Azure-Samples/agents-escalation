@@ -89,7 +89,7 @@ module cosmos 'cosmos.bicep' = {
     uniqueId: uniqueId
     prefix: prefix
     userAssignedIdentityPrincipalId: uami.outputs.principalId
-    currentUserId: principalType == 'User' ? currentUserId : null
+    currentUserId: principalType == 'User' ? currentUserId : ''
   }
 }
 
