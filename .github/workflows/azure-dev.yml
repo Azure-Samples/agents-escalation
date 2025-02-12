@@ -33,13 +33,6 @@ jobs:
       - name: Install azd
         uses: Azure/setup-azd@v2.1.0
 
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
       # azd set up Federated Credential by default. You can remove this step if you are using Client Credentials
       - name: Log in with Azure (Federated Credentials)
         if: ${{ env.AZURE_CLIENT_ID != '' }}
