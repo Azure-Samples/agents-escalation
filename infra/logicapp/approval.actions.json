@@ -117,7 +117,7 @@
       "body": {
         "NotificationUrl": "@listCallbackUrl()",
         "Message": {
-          "To": "ricchi@microsoft.com",
+          "To": "foo@example.com",
           "Body": "@body('Execute_JavaScript_Code')",
           "Importance": "Normal",
           "HideHTMLMessage": false,
